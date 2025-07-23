@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Powered English Grammar Compliance Checker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #34495e;
+      margin-bottom: 30px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+    }
+
+    input[type="file"] {
+      margin: 10px 0 20px;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    .card {
+      background: #ecf0f1;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 5px solid #3498db;
+      border-radius: 4px;
+    }
+
+    .card p {
+      margin: 5px 0;
+    }
+
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>📝 Grammar Compliance Checker</h1>
+    <div class="section">
+      <h2>🔍 Check for Grammar Issues</h2>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <label>Select a PDF or DOCX file:</label>
+        <input type="file" name="file" accept=".pdf,.docx" required>
+        <button type="submit">Analyze</button>
+      </form>
+      <div id="uploadResult"></div>
+    </div>
+
+    <div class="section">
+      <h2>✅ Download Corrected File</h2>
+      <form id="correctForm" enctype="multipart/form-data">
+        <label>Select the same file:</label>
+        <input type="file" name="file" accept=".pdf,.docx" required>
+        <button type="submit">Download Corrected Version</button>
+      </form>
+      <div id="correctResult"></div>
+    </div>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const correctForm = document.getElementById('correctForm');
+    const uploadResult = document.getElementById('uploadResult');
+    const correctResult = document.getElementById('correctResult');
+
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      uploadResult.innerHTML = '⏳ Analyzing...';
+      const formData = new FormData(uploadForm);
+      const res = await fetch('/file_upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      if (data.report && data.report.issues.length > 0) {
+        uploadResult.innerHTML = `<p><strong>🔍 Found ${data.report.total_issues} issue(s):</strong></p>`;
+        data.report.issues.forEach((issue, index) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <p><strong>🔹 Error ${index + 1}:</strong> ${issue.error}</p>
+            <p><strong>💡 Suggestion:</strong> ${issue.suggestion}</p>
+            <p><strong>🧩 Context:</strong> ${issue.context}</p>
+          `;
+          uploadResult.appendChild(card);
+        });
+      } else {
+        uploadResult.innerHTML = `<p class="success">✅ No grammar issues found. Well done!</p>`;
+      }
+    });
+
+    correctForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      correctResult.innerHTML = '⏳ Processing...';
+      const formData = new FormData(correctForm);
+      const res = await fetch('/correction', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'corrected_document.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        correctResult.innerHTML = '<p class="success">✅ Corrected file downloaded successfully.</p>';
+      } else {
+        const error = await res.json();
+        correctResult.innerHTML = '<p class="error">❌ ' + error.error + '</p>';
+      }
+    });
+  </script>
+
+</body>
+</html>
+
