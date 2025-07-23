@@ -1,0 +1,8 @@
+flask
+python-docx
+PyMuPDF
+language-tool-python
+transformers
+torch
+werkzeug
+docx2txt
